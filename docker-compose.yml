@@ -1,0 +1,28 @@
+version: '3.4'
+
+services:
+  spatossr.app:
+    restart: always
+    image: ${DOCKER_REGISTRY-}spatossr.app
+    networks:
+      spatossr.network:
+      spatossr.internal:
+        ipv4_address: "172.18.18.6"
+  
+  spatossr.couchdb:
+    restart: always
+    image: apache/couchdb:latest
+    networks:
+      spatossr.network:
+      spatossr.internal:
+        ipv4_address: "172.18.18.3"
+
+networks:
+  spatossr.internal:
+    internal: true
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.18.18.0/24
+  spatossr.network:

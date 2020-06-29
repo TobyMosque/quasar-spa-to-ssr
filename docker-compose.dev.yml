@@ -1,0 +1,28 @@
+version: '3.4'
+
+services:
+  spatossr.app:
+    container_name: spatossr_app_dev
+    build:
+      context: ./webapp
+      target: 'develop-stage'
+      dockerfile: .docker/dev.Dockerfile
+    volumes:
+      - ./webapp:/app
+    ports:
+      - "8080:8080"
+    command: /bin/sh -c "yarn && quasar upgrade -i && quasar dev -m spa"
+  
+  spatossr.couchdb:
+    container_name: spatossr_couchdb_dev
+    logging:
+      driver: none
+    environment:
+      - "COUCHDB_USER=admin"
+      - "COUCHDB_PASSWORD=NotTooSecretPassword"
+    volumes:
+      - ./couchdb/data:/opt/couchdb/data
+      - ./couchdb/etc:/opt/couchdb/etc/local.d
+    ports:
+      - "40984:5984"
+      - "40986:5986"

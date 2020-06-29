@@ -4,6 +4,7 @@
       alt="Quasar logo"
       src="~assets/quasar-logo-full.svg"
     >
+    <q-btn to="/people" color="primary" label="People" />
   </q-page>
 </template>
 
