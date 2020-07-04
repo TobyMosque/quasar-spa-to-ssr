@@ -1,9 +1,18 @@
+import { uuid } from '@toby.mosque/utils'
+import faker from 'faker'
+
 export default {
   name: 'PagePeople',
   data () {
     return {
       jobs: [],
       people: [],
+      modal: {
+        person: {},
+        show: false,
+        pending: false,
+        unwatch: null
+      },
       columns: [
         { name: '_id', label: 'Avatar', field: '_id', align: 'left', sortable: true },
         { name: 'firstName', label: 'First Name', field: 'firstName', align: 'left', sortable: true },
@@ -127,7 +136,7 @@ export default {
       this.$delete(this.people, this.peopleIndex.get(row.id))
       this.$q.notify({ message: 'person deleted', color: 'positive' })
     },
-    async save (row) {
+    async update (row) {
       const { data } = await this.$axios.put(`${row.id}?rev=${row.rev}`, row.edit)
       if (data.ok) {
         row.rev = row.edit._rev = data.rev
@@ -135,7 +144,70 @@ export default {
         row.edit = {}
         row.pending = false
         this.cancel(row)
-        this.$q.notify({ message: 'person deleted', color: 'positive' })
+        this.$q.notify({ message: 'person updated', color: 'positive' })
+      } else {
+        this.$q.notify({ message: 'something bad happened', color: 'negative' })
+      }
+    },
+    show () {
+      const person = {
+        id: null,
+        avatar: null,
+        firstName: '',
+        lastName: '',
+        company: null,
+        job: null
+      }
+
+      this.$set(this.modal, 'person', person)
+      this.modal.unwatch = this.$watch(() => this.modal.person, () => {
+        this.modal.unwatch()
+        this.modal.pending = true
+        this.modal.unwatch = null
+      }, { deep: true })
+      this.modal.pending = false
+      this.modal.show = true
+    },
+    close () {
+      if (this.modal.pending) {
+        this.$q.dialog({
+          title: 'Pending Changes',
+          message: 'All pending changes will be lost, do you sure?',
+          color: 'warning',
+          ok: 'yes',
+          cancel: 'no'
+        }).onOk(this.closeConfirm)
+      } else {
+        this.closeConfirm()
+      }
+    },
+    closeConfirm (pending) {
+      if (this.modal.unwatch) {
+        this.modal.unwatch()
+        this.modal.unwatch = null
+      }
+      this.modal.pending = false
+      this.modal.show = false
+    },
+    async create () {
+      const person = this.modal.person
+      person.id = 'person:' + uuid.comb()
+      person.avatar = faker.internet.avatar()
+      person.company = this.company
+      const { data } = await this.$axios.put(`${person.id}`, person)
+      if (data.ok) {
+        person._rev = data.rev
+        this.people.push({
+          id: person.id,
+          rev: person._rev,
+          mode: 'read',
+          read: person,
+          edit: {},
+          pending: false,
+          unwatch: null
+        })
+        this.$q.notify({ message: 'person created', color: 'positive' })
+        this.closeConfirm()
       } else {
         this.$q.notify({ message: 'something bad happened', color: 'negative' })
       }
